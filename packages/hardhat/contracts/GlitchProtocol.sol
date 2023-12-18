@@ -6,6 +6,7 @@ import { Clones } from "@openzeppelin/contracts/proxy/Clones.sol";
 import { AccessControlUpgradeable } from "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import { ContextUpgradeable } from "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol";
 import { Context } from "@openzeppelin/contracts/utils/Context.sol";
+import { LibZip } from "solady/src/utils/LibZip.sol";
 // Useful for debugging. Remove when deploying to a live network.
 import "hardhat/console.sol";
 
@@ -33,11 +34,13 @@ contract GlitchProtocolToken is
 	AccessControlUpgradeable,
 	IRhizomaticToken
 {
+	using LibZip for bytes;
+
 	bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
 	bytes32 public constant ORACLE_ROLE = keccak256("ORACLE_ROLE");
 	bytes32 public constant OWNER_ROLE = keccak256("OWNER_ROLE");
 
-	string public stream;
+	bytes public streamCompressed;
 	string public dataType;
 	string private __baseURI;
 
@@ -74,13 +77,17 @@ contract GlitchProtocolToken is
 		_mint(to, tokenId);
 	}
 
-	function updateStream(string memory _stream) public {
+	function updateStream(bytes memory _stream) public {
 		require(
 			hasRole(ORACLE_ROLE, _msgSender()),
 			"GlitchProtocolToken: must have oracle role to update stream"
 		);
-		stream = _stream;
+		streamCompressed = _stream;
 	}
+  
+  function stream() public view returns (string memory) {
+    return string(streamCompressed.flzDecompress());
+  }
 
 	function supportsInterface(
 		bytes4 interfaceId
