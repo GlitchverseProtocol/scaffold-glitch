@@ -1,22 +1,13 @@
-import React from "react";
-import { NextReactP5Wrapper } from "@p5-wrapper/next";
-import { type Sketch } from "@p5-wrapper/react";
+import Script from "next/script";
+import type { NextPage } from "next";
 
-const sketch: Sketch = p5 => {
-  p5.setup = () => p5.createCanvas(600, 400, p5.WEBGL);
-
-  p5.draw = () => {
-    p5.background(250);
-    p5.normalMaterial();
-    p5.push();
-    p5.rotateZ(p5.frameCount * 0.01);
-    p5.rotateX(p5.frameCount * 0.01);
-    p5.rotateY(p5.frameCount * 0.01);
-    p5.plane(100);
-    p5.pop();
-  };
+const Render: NextPage = () => {
+  return (
+    <>
+      <Script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.0.0/p5.min.js" />
+      <Script src="http://127.0.0.1:3000/api/render" />
+    </>
+  );
 };
 
-export default function Page() {
-  return <NextReactP5Wrapper sketch={sketch} />;
-}
+export default Render;
