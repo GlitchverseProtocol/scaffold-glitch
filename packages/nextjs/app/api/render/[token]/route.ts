@@ -2,17 +2,17 @@ import { NextRequest, NextResponse } from "next/server";
 import deployedContracts from "../../../../contracts/deployedContracts";
 import cors from "../../../../lib/cors";
 import { createPublicClient, http } from "viem";
-import { hardhat } from "viem/chains";
+import { hardhat, sepolia } from "viem/chains";
 
 export const runtime = "edge";
 
 // Helper function to create a client
-function createClient(network: string | undefined) {
-  if (network !== "0x7a69") throw new Error("Must be on hardhat");
+function createClient(network: string | undefined, sepoliaRpcUrl?: string) {
   return createPublicClient({
-    chain: hardhat,
+    chain: network === "0x7a69" ? hardhat : sepolia,
     cacheTime: 0,
-    transport: http("http://127.0.0.1:8545"),
+    transport:
+      network === "0x7a69" && hardhat ? http("http://127.0.0.1:8545") : sepoliaRpcUrl ? http(sepoliaRpcUrl) : http(),
   });
 }
 
@@ -34,14 +34,23 @@ export async function GET(req: NextRequest) {
     throw new Error("Invalid primary contract address");
   }
   const network = process.env.NETWORK;
-  //   const factoryAddress = process.env[`GLITCH_FACTORY_${network}`] as `0x${string}` | undefined;
+  const baseUrl = process.env.BASE_URL;
+  const sepoliaRpcUrl = process.env.SEPOLIA_RPC_URL;
+  let registryAddress = process.env.REGISTRY_ADDRESS;
 
-  console.log({ network });
+  console.log({ network, baseUrl, sepoliaRpcUrl, registryAddress });
   if (!network) console.warn("Missing network");
-  //   if (!factoryAddress) console.warn("Missing collection address");
+  if (!baseUrl) console.warn("Missing base url");
+  if (!sepoliaRpcUrl) console.warn("Missing sepolia rpc url");
 
-  const client = createClient(network);
+  const client = createClient(network, sepoliaRpcUrl);
   const deployedFactory = deployedContracts["31337"]["GlitchProtocolFactory"];
+
+  if (network === "0x7a69") {
+    registryAddress = deployedFactory.address;
+  }
+
+  if (!registryAddress) throw new Error("Missing registry address");
 
   const abi = deployedFactory.abi;
 
@@ -49,7 +58,7 @@ export async function GET(req: NextRequest) {
   console.log(`Block number: ${blockNumber}`);
 
   const tokenCount = (await client.readContract({
-    address: deployedFactory.address,
+    address: registryAddress as `0x${string}`,
     abi,
     functionName: "tokenCount",
   })) as bigint;
@@ -59,7 +68,7 @@ export async function GET(req: NextRequest) {
 
   for (let i = 0; i < parseInt(tokenCount.toString()); i++) {
     const token = (await client.readContract({
-      address: deployedFactory.address,
+      address: registryAddress as `0x${string}`,
       abi,
       functionName: "registeredTokens",
       args: [BigInt(i)],
@@ -115,7 +124,7 @@ export async function GET(req: NextRequest) {
                 }
             }
             </script>
-            <script type="module" src="http://127.0.0.1:3000/api/scripts"></script>
+            <script type="module" src="${baseUrl}/api/scripts"></script>
             </body>
         </html>
       `;

@@ -39,13 +39,23 @@ async function createImplementation(
 
   const tokenCount = await glitchFactory.tokenCount();
   const salt = ethers.utils.formatBytes32String("test" + tokenCount.toString());
-  await glitchFactory.createToken(salt, config.name, config.symbol, config.dataType, config.baseUri);
+  const deploymentTx = await glitchFactory.createToken(
+    salt,
+    config.name,
+    config.symbol,
+    config.dataType,
+    config.baseUri,
+  );
+  await deploymentTx.wait(2);
 
   const newTokenAddress = await glitchFactory.registeredTokens(tokenCount);
   const newImplementation = (await ethers.getContractAt("GlitchProtocolToken", newTokenAddress)) as GlitchProtocolToken;
-  await newImplementation.grantRole(ownerRole, deployer);
-  await newImplementation.grantRole(minterRole, deployer);
-  await newImplementation.grantRole(oracleRole, deployer);
+  const tx1 = await newImplementation.grantRole(ownerRole, deployer);
+  await tx1.wait(2);
+  const tx2 = await newImplementation.grantRole(minterRole, deployer);
+  await tx2.wait(2);
+  const tx3 = await newImplementation.grantRole(oracleRole, deployer);
+  await tx3.wait(2);
   return newImplementation;
 }
 
@@ -56,7 +66,8 @@ async function streamData(implementation: GlitchProtocolToken, path: string) {
 
   const hexData = Buffer.from(dataUrl, "utf8").toString("hex");
   const compressedData = LibZip.flzCompress(hexData);
-  await implementation.updateStream(compressedData);
+  const tx = await implementation.updateStream(compressedData);
+  await tx.wait(2);
 }
 /**
  * Deploys a contract named "YourContract" using the deployer account and
@@ -78,12 +89,18 @@ const deployGlitchProtocol: DeployFunction = async function (hre: HardhatRuntime
   const { deployer } = await hre.getNamedAccounts();
 
   const newImplementation = await createImplementation(hre, deployer);
+  const mintTx = await newImplementation.mint(deployer, 1);
+  await mintTx.wait(2);
   await streamData(newImplementation, "test-data/heartbeat.ogg");
 
   const implementationB = await createImplementation(hre, deployer);
+  const tx2 = await implementationB.mint(deployer, 1);
+  await tx2.wait(2);
   await streamData(implementationB, "test-data/bass.ogg");
 
   const implementationC = await createImplementation(hre, deployer);
+  const tx3 = await implementationC.mint(deployer, 1);
+  await tx3.wait(2);
   await streamData(implementationC, "test-data/sample.ogg");
 };
 
