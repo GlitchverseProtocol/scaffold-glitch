@@ -1,29 +1,40 @@
 import * as THREE from "three";
+import { CSS2DObject, CSS2DRenderer } from "three/addons/renderers/CSS2DRenderer.js";
 
-var camera, scene, renderer;
+var camera, scene, renderer, labelRenderer;
 var raycaster = new THREE.Raycaster(); // for click detection
 var mouse = new THREE.Vector2(); // to store the mouse position
 
 let sounds = [];
 let shapes = []; // to store the shapes
 let lines = [];
+let labels = [];
 
 let velocityScale = 0.05;
+let pulsatingSpeed = 0.005;
+let pulsatationAmplitude = 0.15;
+let shapeColors = [0x00ffff, 0xff00ff, 0xffff00, 0x0000ff, 0x800080, 0x008000];
 
 // init
 function init() {
   // scene
   scene = new THREE.Scene();
-  scene.fog = new THREE.FogExp2(0x01131e, 0.025);
+  scene.fog = new THREE.FogExp2(0x000000, 0.025);
 
-  var light = new THREE.PointLight(0xffffff, 1, 100);
+  var light = new THREE.PointLight(0xff00ff, 1, 100);
+  light.position.set(-10, -10, -10);
+  scene.add(light);
+
   // Add an AmbientLight to the scene
-  var ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+  var ambientLight = new THREE.AmbientLight(0x00ffff, 0.2);
   scene.add(ambientLight);
 
-  // Move the PointLight to a different position
-  light.position.set(10, 10, 10);
-  scene.add(light);
+  // Labels
+  labelRenderer = new CSS2DRenderer();
+  labelRenderer.setSize(window.innerWidth, window.innerHeight);
+  labelRenderer.domElement.style.position = "absolute";
+  labelRenderer.domElement.style.top = "0px";
+  document.body.appendChild(labelRenderer.domElement);
 
   var audioLoader = new THREE.AudioLoader();
   var listener = new THREE.AudioListener();
@@ -53,47 +64,82 @@ function init() {
     } else if (tokenData[i].dataType === "audio/ogg") {
       console.log("audio/ogg");
       // AUDIO
-      var audio = new THREE.Audio(listener);
       if (!tokenData[i].data) {
         console.warn("No data for audio");
-        continue
+        continue;
       }
-      audioLoader.load(tokenData[i].data, function (buffer) {
-        audio.setBuffer(buffer);
-        audio.setLoop(true);
-        sounds.push(audio);
-        console.log("loaded");
-        console.log(sounds);
+      // Create a closure to capture the current value of i
+      (function (i) {
+        var audio = new THREE.Audio(listener);
+        var contractAddress = tokenData[i].contract;
+        audioLoader.load(tokenData[i].data, function (buffer) {
+          audio.setBuffer(buffer);
+          audio.setLoop(true);
+          sounds.push(audio);
+          console.log("loaded");
+          console.log(sounds);
 
-        // Create a sphere for each audio
-        var geometry = new THREE.SphereGeometry(0.5, 32, 32);
-        var material = new THREE.MeshPhongMaterial({ color: Math.random() * 0xffffff }); // Use MeshPhongMaterial
-        var sphere = new THREE.Mesh(geometry, material);
-        sphere.position.x = i * 2 - tokenData.length; // subtract half of the total width
-        sphere.userData = { soundIndex: sounds.length - 1 }; // store the index of the sound associated with this sphere
-        sphere.userData = {
-          soundIndex: sounds.length - 1,
-          hasSound: true,
-          velocity: new THREE.Vector3(
-            (Math.random() - 0.5) * velocityScale,
-            (Math.random() - 0.5) * velocityScale,
-            (Math.random() - 0.5) * velocityScale,
-          ),
-        };
-        shapes.push(sphere);
-        scene.add(sphere);
+          // Create a sphere for each audio
+          // Create a sphere for each audio
+          var geometry = new THREE.SphereGeometry(0.5, 32, 32);
+          var wireframe = new THREE.WireframeGeometry(geometry); // Create a wireframe geometry from the sphere geometry
 
-        for (let i = 0; i < shapes.length - 1; i++) {
-          for (let j = i + 1; j < shapes.length; j++) {
-            var material = new THREE.LineBasicMaterial({ color: 0xffffff });
-            var geometry = new THREE.BufferGeometry().setFromPoints([shapes[i].position, shapes[j].position]);
-            var line = new THREE.Line(geometry, material);
-            line.userData = { indices: [i, j] }; // Store the indices of the associated shapes
-            scene.add(line);
-            lines.push(line);
+          var material = new THREE.LineBasicMaterial({
+            color: shapeColors[Math.floor(Math.random() * shapeColors.length)],
+          });
+          var sphere = new THREE.LineSegments(wireframe, material); // Create a LineSegments object instead of a Mesh
+
+          // If tokenData.isPrimary is true, create an outer sphere
+          if (tokenData[i].isPrimary) {
+            console.log("isPrimary", i);
+            var outerGeometry = new THREE.SphereGeometry(0.6, 32, 32); // slightly larger than the inner sphere
+            var outerMaterial = new THREE.MeshBasicMaterial({
+              color: 0x00ff00,
+              transparent: true,
+              opacity: 0.5,
+            });
+            var outerSphere = new THREE.Mesh(outerGeometry, outerMaterial);
+            outerSphere.add(sphere); // add the inner sphere to the outer sphere
+            sphere = outerSphere; // now the sphere variable refers to the outer sphere
           }
-        }
-      });
+
+          sphere.position.x = i * 2 - tokenData.length; // subtract half of the total width
+          sphere.userData = {
+            soundIndex: sounds.length - 1,
+            hasSound: true,
+            velocity: new THREE.Vector3(
+              (Math.random() - 0.5) * velocityScale,
+              (Math.random() - 0.5) * velocityScale,
+              (Math.random() - 0.5) * velocityScale,
+            ),
+          };
+
+          var div = document.createElement("div");
+          div.className = "label";
+          div.textContent = contractAddress;
+          div.style.marginTop = "-1em";
+          div.style.fontFamily = "Courier New, monospace"; // set the font to a monospace font
+          div.style.color = "#00ff00"; // set the color to green
+          var label = new CSS2DObject(div);
+          label.userData = { sphere: sphere };
+          label.position.y = 0.6; // adjust this value to position the label above the sphere
+          labels.push(label);
+          scene.add(label);
+
+          shapes.push(sphere);
+          scene.add(sphere);
+          for (let k = 0; k < shapes.length - 1; k++) {
+            for (let j = k + 1; j < shapes.length; j++) {
+              var material = new THREE.LineBasicMaterial({ color: 0x00ffff });
+              var geometry = new THREE.BufferGeometry().setFromPoints([shapes[k].position, shapes[j].position]);
+              var line = new THREE.Line(geometry, material);
+              line.userData = { indices: [k, j] }; // Store the indices of the associated shapes
+              scene.add(line);
+              lines.push(line);
+            }
+          }
+        });
+      })(i);
     }
   }
 
@@ -106,12 +152,14 @@ function init() {
   renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
   renderer.setSize(window.innerWidth, window.innerHeight);
 
-  renderer.setClearColor("#01131E");
+  renderer.setClearColor("#000000");
   document.body.appendChild(renderer.domElement);
 
   // Add event listener for mouse click
   window.addEventListener("click", onDocumentMouseDown, false);
 }
+
+let frameCount = 0;
 
 function animate() {
   requestAnimationFrame(animate);
@@ -124,6 +172,19 @@ function animate() {
     if (shape.position.x < -5 || shape.position.x > 5) shape.userData.velocity.x = -shape.userData.velocity.x;
     if (shape.position.y < -5 || shape.position.y > 5) shape.userData.velocity.y = -shape.userData.velocity.y;
     if (shape.position.z < -5 || shape.position.z > 5) shape.userData.velocity.z = -shape.userData.velocity.z;
+
+    // If the shape has sound, check if it's playing and update isPlaying
+    if (shape.userData.hasSound) {
+      shape.userData.isPlaying = sounds[shape.userData.soundIndex].isPlaying;
+
+      // If the sound is playing, make it pulsate
+      if (shape.userData.isPlaying) {
+        var scale = Math.sin(Date.now() * pulsatingSpeed) * pulsatationAmplitude + 1; // Change 0.001 to adjust the speed, 0.1 to adjust the amplitude
+        shape.scale.set(scale, scale, scale);
+      } else {
+        shape.scale.set(1, 1, 1); // Reset the scale when the sound is not playing
+      }
+    }
   });
 
   // Update line vertices
@@ -133,12 +194,21 @@ function animate() {
     line.geometry = geometry;
   });
 
+  if (frameCount % 2 === 0) {
+    labels.forEach(label => {
+      label.position.copy(label.userData.sphere.position);
+    });
+  }
+
+  frameCount++;
+
   render();
 }
 
 // render
 function render() {
   renderer.render(scene, camera);
+  labelRenderer.render(scene, camera);
 }
 
 // Event handler for mouse click
@@ -158,12 +228,14 @@ function onDocumentMouseDown(event) {
       var soundIndex = intersectedObject.userData.soundIndex;
       if (sounds[soundIndex]) {
         console.log("soundIndex", soundIndex);
-        if (sounds[soundIndex].isPlaying) {
+        if (intersectedObject.userData.isPlaying) {
           console.log("stop");
           sounds[soundIndex].stop();
+          intersectedObject.userData.isPlaying = false; // Set isPlaying to false when the sound is stopped
         } else {
           console.log("play");
           sounds[soundIndex].play();
+          intersectedObject.userData.isPlaying = true; // Set isPlaying to true when the sound is played
         }
       } else {
         console.log("Audio is not loaded yet");

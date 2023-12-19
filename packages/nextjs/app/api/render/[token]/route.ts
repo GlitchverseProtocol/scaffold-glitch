@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import deployedContracts from "../../../contracts/deployedContracts";
-import cors from "../../../lib/cors";
+import deployedContracts from "../../../../contracts/deployedContracts";
+import cors from "../../../../lib/cors";
 import { createPublicClient, http } from "viem";
 import { hardhat } from "viem/chains";
 
@@ -20,9 +20,19 @@ interface ITokenData {
   contract: string;
   dataType: string;
   data: string;
+  isPrimary?: boolean;
 }
 
 export async function GET(req: NextRequest) {
+  const params = req.nextUrl.pathname.split("/");
+  console.log({ params });
+  const primaryContract = params[3]; // token
+  // Ethereum addresses start with 0x followed by 40 hexadecimal characters
+  const ethAddressRegex = /^0x[a-fA-F0-9]{40}$/;
+
+  if (primaryContract && !ethAddressRegex.test(primaryContract)) {
+    throw new Error("Invalid primary contract address");
+  }
   const network = process.env.NETWORK;
   //   const factoryAddress = process.env[`GLITCH_FACTORY_${network}`] as `0x${string}` | undefined;
 
@@ -70,6 +80,15 @@ export async function GET(req: NextRequest) {
       dataType: tokenDataType,
       data: stream,
     });
+  }
+
+  if (tokenData.length > 0) {
+    for (let i = 0; i < tokenData.length; i++) {
+      if (tokenData[i].contract.toLowerCase() === primaryContract?.toLowerCase()) {
+        tokenData[i].isPrimary = true;
+        break;
+      }
+    }
   }
 
   const tokenDataString = JSON.stringify(tokenData);
