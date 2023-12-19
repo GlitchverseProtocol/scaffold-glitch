@@ -31,7 +31,7 @@ const deployGlitchProtocol: DeployFunction = async function (hre: HardhatRuntime
     console.log(`Setting base URI for token ${i}`);
     const tokenAddress = await glitchFactory.registeredTokens(i);
     const implementation = (await ethers.getContractAt("GlitchProtocolToken", tokenAddress)) as GlitchProtocolToken;
-    await implementation.setBaseURI(`https://glitchprotocol.xyz/api/${tokenAddress}/`);
+    await implementation.setBaseURI(`https://www.glitchprotocol.xyz/api/token/${tokenAddress}/`);
   }
 };
 

@@ -1,0 +1,24 @@
+- info Loaded env from /Users/isaacpatka/glitch/scaffold-glitch/packages/nextjs/.env
+- info Creating an optimized production build...
+Browserslist: caniuse-lite is outdated. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+
+[35m🌼 daisyUI 3.5.1[0m [0mhttps://daisyui.com
+╰╮
+ ╰─ [32m✔︎[0m [2m[ [0m2[2m ][0m themes are enabled. You can add more themes or make your own theme:
+      https://daisyui.com/docs/themes
+
+[32m    ❤︎ Support daisyUI[0m: https://opencollective.com/daisyui[0m
+
+Browserslist: caniuse-lite is outdated. Please run:
+  npx browserslist@latest --update-db
+  Why you should do it regularly: https://github.com/browserslist/browserslist#browsers-data-updating
+- info Compiled successfully
+- info Linting and checking validity of types...
+DeprecationWarning: 'originalKeywordKind' has been deprecated since v5.0.0 and will no longer be usable after v5.2.0. Use 'identifierToKeywordKind(identifier)' instead.
+
+./lib/cors.ts
+75:15  Warning: Forbidden non-null assertion.  @typescript-eslint/no-non-null-assertion
+
+info  - Need to disable some ESLint rules? Learn more here: https://nextjs.org/docs/basic-features/eslint#disabling-rules
