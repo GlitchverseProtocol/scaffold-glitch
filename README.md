@@ -6,6 +6,12 @@ This repository contains the smart contracts and an API for rendering the networ
 
 ### Sample Render
 
+
+https://github.com/GlitchverseProtocol/scaffold-glitch/assets/4401444/1f08dd5c-aa04-403c-aae3-af75523dcb66
+
+
+[Live View](https://www.glitchprotocol.xyz/api/render/0x086a8d25386ccdbcd38ea442af3a66f7318baa3b)
+
 This is an example output of a contract on the Glitch Protocol. In this case each connected work is supplying an audio file to the associated contract. Each contract's data stream is made available to a rendering function built with Three.js. Click each contract to hear the audio it is supplying to the network.
 
 Artworks on the protocol can stream any datatypes. The type is specified by including a `mimeType` in the contract's metadata. The rendering function can then use the `mimeType` to determine how to render the data.
