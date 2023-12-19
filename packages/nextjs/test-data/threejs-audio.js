@@ -31,7 +31,7 @@ function init() {
   var textureLoader = new THREE.TextureLoader();
 
   for (let i = 0; i < tokenData.length; i++) {
-    if (tokenData[i].dataType === "png") {
+    if (tokenData[i].dataType === "image/png") {
       console.log("image");
       // IMAGE
       var texture = textureLoader.load(tokenData[i].data);
@@ -50,10 +50,14 @@ function init() {
       cube.position.x = i * 2 - tokenData.length; // subtract half of the total width
       shapes.push(cube);
       scene.add(cube);
-    } else if (tokenData[i].dataType === "mp3") {
-      console.log("mp3");
+    } else if (tokenData[i].dataType === "audio/ogg") {
+      console.log("audio/ogg");
       // AUDIO
       var audio = new THREE.Audio(listener);
+      if (!tokenData[i].data) {
+        console.warn("No data for audio");
+        continue
+      }
       audioLoader.load(tokenData[i].data, function (buffer) {
         audio.setBuffer(buffer);
         audio.setLoop(true);
