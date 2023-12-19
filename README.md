@@ -4,7 +4,7 @@ A reference implementation of the Glitch Protocol. The Glitch Protocol establish
 
 This repository contains the smart contracts and an API for rendering the network.
 
-### Sample Render
+### Sample Render (Unmute)
 
 
 https://github.com/GlitchverseProtocol/scaffold-glitch/assets/4401444/1f08dd5c-aa04-403c-aae3-af75523dcb66
