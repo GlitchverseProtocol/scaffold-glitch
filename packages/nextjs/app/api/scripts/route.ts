@@ -47,7 +47,7 @@ export async function GET(req: NextRequest) {
   // const client = createClient(network, mainnetRpcUrl, goerliRpcUrl)
 
   try {
-    const fileContent = RenderScripts.p5;
+    const fileContent = RenderScripts.three;
     return cors(
       req,
       new NextResponse(fileContent, {
